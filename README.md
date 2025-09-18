@@ -1,26 +1,27 @@
 ```mermaid
 graph TD
-    subgraph "Cliente"
-        A[Shopify / Vitrine do E-commerce]
+    subgraph "Cliente & Vitrine"
+        User[Usuário] --> A[Frontend Shopify];
     end
 
     subgraph "Sua Arquitetura"
-        B(Sua API de Reserva de Estoque)
+        B(Sua API de Reserva de Estoque);
     end
 
-    subgraph "Sistema de Gestão (ERP)"
-        C[Bling / Fonte da Verdade do Estoque]
+    subgraph "Sistemas Externos (Backends)"
+        ShopifyBE[Backend do Shopify];
+        C[Bling / ERP];
     end
 
-    %% Fluxo Principal de Reserva (Alta Frequência)
-    A -- "1. Cliente adiciona último item ao carrinho<br>(POST /stock/{sku}/reserve)" --> B;
-    B -- "2. Reserva confirmada ou negada<br>(Resposta 200 OK ou 409 Conflict)" --> A;
+    %% Fluxo de Reserva
+    A -- "1. Adiciona item ao carrinho" --> B;
+    B -- "2. Retorna reservation_id" --> A;
 
-    %% Fluxo de Confirmação de Compra (Menor Frequência)
-    A -- "3. Cliente finaliza a compra" --> B;
-    B -- "4. Efetiva a compra<br>(POST /stock/confirm)" --> B;
-    B -- "5. Atualiza estoque definitivo no ERP" --> C;
+    %% Fluxo de Confirmação
+    A -- "3. Usuário finaliza o pagamento" --> ShopifyBE;
+    ShopifyBE -- "4. Pedido criado! Chama sua API para efetivar<br>(POST /stock/confirm)" --> B;
+    B -- "5. Valida e remove reserva" --> B;
+    B -- "6. Responde ao Shopify" --> ShopifyBE;
+    B -- "7. Atualiza estoque definitivo" --> C;
 
-    %% Fluxo de Sincronização Inicial (Baixa Frequência)
-    C -- "Carga inicial de estoque" --> B;
 ```
