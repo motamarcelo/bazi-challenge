@@ -1,7 +1,81 @@
-## A mágica acontecendo
-Foi utilizado o mecanismo de Locking pessimista - A API possui uma "Porta" com a quantidade de items do estoque e para acessar essa informação existe somente uma "Chave"(No código, o objeto threading.Lock), no momento que um cliente adicionar um item ao carrinho ele tenta pegar essa chave para verificar a quantidade de itens no estoque, se a chave estiver disponível ele altera a quantidade do estoque e devolve a chave, se a chave estiver ocupada ele aguarda o outro processo finalizar para só então prosseguir. Este processo garante que a operação crítica de "verificar-e-modificar" o estoque seja indivisível. Isso elimina a race condition e assegura que, mesmo que dois clientes cliquem "comprar" simultaneamente, o último item será vendido de forma justa e consistente para apenas um deles.
+# Desafio de Dados: Serviço de Reserva de Estoque em Tempo Real
 
-### Diagrama de sequência que mostra o funcionamento do Locking Pessimista
+[cite_start]Este repositório contém a solução para o Desafio de Dados da Bázico, que consiste em um protótipo de um serviço de reserva de estoque em tempo real para a campanha "BaziWeek"[cite: 9, 10].
+
+## Como Executar o Protótipo
+
+Estas instruções permitirão que você configure e execute a API de Reserva de Estoque em um ambiente local.
+
+#### Pré-requisitos
+
+Antes de começar, garanta que você tenha os seguintes softwares instalados:
+* **Python 3.10+**
+* **Git**
+
+As instruções abaixo são para um ambiente baseado em Linux (como Ubuntu, Debian, ou WSL).
+
+#### 1. Clonar o Repositório
+
+Primeiro, clone este repositório para a sua máquina local:
+```bash
+git clone [https://github.com/seu-usuario/desafio-bazico-estoque.git](https://github.com/seu-usuario/desafio-bazico-estoque.git)
+```
+*(Lembre-se de substituir pela URL do seu repositório)*
+
+Depois, navegue para o diretório do projeto:
+```bash
+cd desafio-bazico-estoque
+```
+
+#### 2. Criar e Ativar o Ambiente Virtual
+
+É uma boa prática usar um ambiente virtual para isolar as dependências do projeto.
+```bash
+# Criar o ambiente virtual
+python3 -m venv venv
+
+# Ativar o ambiente virtual
+source venv/bin/activate
+```
+
+#### 3. Instalar as Dependências
+
+Todas as bibliotecas Python necessárias estão listadas no arquivo `requirements.txt`. Para instalá-las, execute:
+```bash
+pip install -r requirements.txt
+```
+
+#### 4. Executar a Aplicação
+
+Com as dependências instaladas, inicie o servidor de desenvolvimento com o Uvicorn:
+```bash
+uvicorn app.main:app --reload
+```
+O servidor estará em execução em `http://127.0.0.1:8000`.
+
+#### 5. Acessar e Testar a API
+
+A melhor maneira de interagir e testar os endpoints é através da documentação automática gerada pelo FastAPI:
+
+* **Documentação Interativa (Swagger UI):** Acesse **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**
+
+---
+
+## O Desafio Adicional: Como a Mágica Acontece
+
+[cite_start]Para resolver a clássica "corrida pelo último item", foi utilizado o mecanismo de **Locking Pessimista** para garantir que apenas um cliente consiga a reserva[cite: 28, 30].
+
+A lógica pode ser entendida com uma analogia simples: imagine que nosso estoque é um recurso valioso guardado em uma **"Sala-Cofre"** que possui apenas uma chave.
+
+1.  Quando uma requisição de um cliente chega para reservar um item, ela precisa pegar a **única chave** (em nosso código, o objeto `threading.Lock`) para poder entrar na sala.
+2.  Se a chave estiver ocupada com outra requisição, ela obrigatoriamente **aguarda em uma fila** até a chave ser devolvida.
+3.  Ao entrar na sala, a requisição executa toda a sua tarefa de forma **atômica**, ou seja, sem interrupções: ela **verifica** a quantidade de itens e, se houver, **decrementa** o estoque e cria a reserva.
+4.  Apenas ao finalizar essa operação completa, ela sai da sala e **devolve a chave**, permitindo que a próxima requisição da fila possa entrar.
+
+Este processo garante que a operação crítica de "verificar-e-modificar" o estoque seja indivisível. [cite_start]Isso elimina a *race condition* e assegura que, mesmo que dois clientes cliquem em "comprar" simultaneamente, o último item será vendido de forma justa e consistente para apenas um deles[cite: 32, 30].
+
+### Diagrama de Sequência: Funcionamento do Locking Pessimista
+
 ```mermaid
 sequenceDiagram
     participant Cliente Ana
@@ -40,7 +114,10 @@ sequenceDiagram
     API-->>-Cliente Beto: 409 Conflict (Estoque Esgotado)
 ```
 
-## Diagrama da Arquitetura - Como a API se conecta
+## Diagrama da Arquitetura: Como a API se Conecta
+
+[cite_start]Este diagrama ilustra como a API se encaixaria entre a vitrine do e-commerce (Shopify) e a fonte da verdade do estoque (Bling)[cite: 37].
+
 ```mermaid
 graph TD
     subgraph "Cliente"
@@ -69,27 +146,43 @@ graph TD
 ```
 
 ## Relatório de Raciocínio
+
 ### A - Decisões de Arquitetura
-_Seguindo os objetivos e princípios da Bázico a experiência do cliente é o requisito de negócio mais crítico. Logo, garantir uma experiência de compra impecável sob alta demanda, onde é inaceitável vender um produto já esgotado é fundamental._
--> Criar um microserviço para desacoplar a lógica de reserva, permitindo a escala e otimização do componente mais crítico da campanha.
--> Foi utilizado o FastAPI como framework devido a sua alta perfomance, facilidade de prototipagem e geração de documentação automática, o que casou com o escopo do projeto.
--> Para garantir a atomicidade da operação de reserva foi utilizado Locking Pessimista, para prevenir a "corrida pelo último item", criando uma fila para requisições simultâneas.
--> Prós: Desacoplamento, Especialização e desempenho. Por ser um serviço a parte ajuda a descarregar o peso no estoque principal(Bling) principalmente em eventos como a BaziWeek, e permite utilizar tecnologias e escalar sem afetar a experiência do usuário.
--> Contras: Aumenta a complexidade arquitetural por ser mais um componente que precisa ser implantado, monitador e mantido. ConsistÊncia de dados uma vez que surge a necessidade de garantir a sicronização de dados entre o serviço de reserva e o ERP. Se torna um ponto de falha já que por ser projetado para isolar falhas de outros sistemas, ele mesmo se torna um objeto crítico necessitando alta disponibilidade.
+
+A experiência do cliente é o requisito de negócio mais crítico. [cite_start]Garantir uma experiência de compra impecável sob alta demanda, onde é **inaceitável vender um produto já esgotado**, foi o pilar da arquitetura escolhida[cite: 11, 12].
+
+* [cite_start]**Microserviço Dedicado:** Foi criado um microserviço para desacoplar a lógica de reserva, permitindo a escala e otimização independentes do componente mais crítico da campanha[cite: 13].
+* **FastAPI como Framework:** Utilizado devido à sua alta performance, facilidade de prototipagem e geração de documentação automática, ideal para o escopo do projeto.
+* [cite_start]**Locking Pessimista:** Para garantir a atomicidade da operação de reserva, foi utilizado o Locking Pessimista para prevenir a "corrida pelo último item", criando uma fila ordenada para requisições simultâneas[cite: 28, 31, 32].
+
+[cite_start]**Prós e Contras do Serviço Separado**[cite: 42]:
+
+* **Prós:**
+    * [cite_start]**Desacoplamento e Especialização:** O serviço foca em uma única tarefa, protegendo o sistema principal de estoque (Bling) da sobrecarga de tráfego durante eventos como a BaziWeek[cite: 37].
+    * **Desempenho e Escalabilidade:** Permite utilizar tecnologias otimizadas (como Redis em produção) e escalar de forma independente, sem afetar a experiência geral do usuário.
+
+* **Contras:**
+    * **Complexidade Arquitetural:** Adiciona mais um componente que precisa ser implantado, monitorado e mantido.
+    * **Consistência de Dados:** Cria o desafio de garantir a sincronização de dados entre o serviço de reserva e o ERP, exigindo estratégias de retentativa e reconciliação.
+    * **Ponto Único de Falha:** O serviço se torna um componente crítico. Sua falha impactaria diretamente a capacidade de os clientes adicionarem itens ao carrinho, exigindo alta disponibilidade.
 
 ### B - Diário de IA
-_Modelo utilizado Gemini 2.5 PRO_
--> Gerar o boilerplate da API em FastAPI
--> Debater estratégias para lidar com a race condition
--> Geração de código Mermaid para criação dos diagramas em Markdown
--> Consultar estratégias para implementação de Workers e ferramentas possíveis para serem utilizadas em produção;
 
-### C - Critica à IA
-Foi sugerido inicialmente a utilização de um componente singular id, para identificar as reservas, o que eu sugeri foi utilizar uuid para garantir um identificador único entre os microserviços a chance de colisão é imensamente baixa.
+[cite_start]Para este desafio, o Gemini foi utilizado como um parceiro de desenvolvimento nas seguintes frentes[cite: 43]:
+
+* **Prototipagem:** Gerou o *boilerplate* da API em FastAPI, agilizando o desenvolvimento inicial.
+* **Debate de Estratégias:** Auxiliou no debate sobre as vantagens e desvantagens de diferentes estratégias para lidar com a *race condition* (locking pessimista vs. otimista).
+* **Visualização:** Gerou o código Mermaid para a criação dos diagramas de sequência e arquitetura presentes neste documento, bem como restruturação do Markdown.
+* **Planejamento de Produção:** Ajudou a consultar e estruturar as melhores práticas e ferramentas para um ambiente de produção (Redis, Prometheus, Grafana, etc.).
+
+### C - Crítica à IA
+
+Durante a prototipagem, foi sugerido inicialmente a utilização de um ID numérico sequencial para identificar as reservas. Embora funcional, essa abordagem é ingênua em um ambiente de microserviços, pois IDs sequenciais podem levar a colisões e expõem uma vulnerabilidade de segurança (enumeração de recursos). Aprimorei a sugestão utilizando `UUID` para gerar os identificadores de reserva. [cite_start]O `UUID` garante um identificador único entre os microserviços (reserva e ERP) e não é previsível, tornando a solução mais robusta e segura[cite: 45].
 
 ### D - Plano de Produção
--> Banco de Dados em memória(Como o Redis) devido a o gerenciamento das reservas serem temporárias e volatéis, possui expiração automática de chave(TTL) o que seria útil para excluir reservas expiradas.
--> Logs estruturados em formato JSON, para os eventos importantes da plataforma(Reserva criada, falhou, falta de estoque, expirada)
--> Utilizar ferramentas como o ELK Stack para gerenciar os logs, facilitando a investigação de problemas.
--> Utilizar o Prometheus para coletar métricas da API junto com o Grafana para criar dashboards visuais
--> Criar alertas automatizados com o Alertmanager(Do prometheus) e enviar para canais críticos como o Slack.
+
+* **Banco de Dados:** Utilizaria um banco de dados em memória como o **Redis** para gerenciar as reservas, que são temporárias e voláteis. [cite_start]Sua performance e o recurso de expiração automática de chaves (TTL) seriam ideais para gerenciar as reservas que expiram[cite: 47].
+* [cite_start]**Observabilidade**[cite: 48]:
+    * **Logs:** Logs estruturados em formato JSON para todos os eventos importantes (reserva criada, falhou, falta de estoque, expirada), gerenciados por ferramentas como o **ELK Stack**.
+    * **Métricas:** Utilizaria o **Prometheus** para coletar métricas da API (latência, taxa de erro, requisições por segundo) e o **Grafana** para criar dashboards visuais para monitoramento em tempo real.
+    * **Alertas:** Criaria alertas automatizados com o **Alertmanager** (do ecossistema Prometheus), com notificações enviadas para canais críticos como o **Slack** para garantir uma resposta rápida a incidentes.
