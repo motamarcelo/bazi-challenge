@@ -1,6 +1,6 @@
 # Desafio de Dados: Serviço de Reserva de Estoque em Tempo Real
 
-[cite_start]Este repositório contém a solução para o Desafio de Dados da Bázico, que consiste em um protótipo de um serviço de reserva de estoque em tempo real para a campanha "BaziWeek"[cite: 9, 10].
+Este repositório contém a solução para o Desafio de Dados da Bázico, que consiste em um protótipo de um serviço de reserva de estoque em tempo real para a campanha "BaziWeek".
 
 ## Como Executar o Protótipo
 
@@ -63,7 +63,7 @@ A melhor maneira de interagir e testar os endpoints é através da documentaçã
 
 ## O Desafio Adicional: Como a Mágica Acontece
 
-[cite_start]Para resolver a clássica "corrida pelo último item", foi utilizado o mecanismo de **Locking Pessimista** para garantir que apenas um cliente consiga a reserva[cite: 28, 30].
+Para resolver a clássica "corrida pelo último item", foi utilizado o mecanismo de **Locking Pessimista** para garantir que apenas um cliente consiga a reserva.
 
 A lógica pode ser entendida com uma analogia simples: imagine que nosso estoque é um recurso valioso guardado em uma **"Sala-Cofre"** que possui apenas uma chave.
 
@@ -72,7 +72,7 @@ A lógica pode ser entendida com uma analogia simples: imagine que nosso estoque
 3.  Ao entrar na sala, a requisição executa toda a sua tarefa de forma **atômica**, ou seja, sem interrupções: ela **verifica** a quantidade de itens e, se houver, **decrementa** o estoque e cria a reserva.
 4.  Apenas ao finalizar essa operação completa, ela sai da sala e **devolve a chave**, permitindo que a próxima requisição da fila possa entrar.
 
-Este processo garante que a operação crítica de "verificar-e-modificar" o estoque seja indivisível. [cite_start]Isso elimina a *race condition* e assegura que, mesmo que dois clientes cliquem em "comprar" simultaneamente, o último item será vendido de forma justa e consistente para apenas um deles[cite: 32, 30].
+Este processo garante que a operação crítica de "verificar-e-modificar" o estoque seja indivisível. Isso elimina a *race condition* e assegura que, mesmo que dois clientes cliquem em "comprar" simultaneamente, o último item será vendido de forma justa e consistente para apenas um deles.
 
 ### Diagrama de Sequência: Funcionamento do Locking Pessimista
 
@@ -116,7 +116,7 @@ sequenceDiagram
 
 ## Diagrama da Arquitetura: Como a API se Conecta
 
-[cite_start]Este diagrama ilustra como a API se encaixaria entre a vitrine do e-commerce (Shopify) e a fonte da verdade do estoque (Bling)[cite: 37].
+Este diagrama ilustra como a API se encaixaria entre a vitrine do e-commerce (Shopify) e a fonte da verdade do estoque (Bling).
 
 ```mermaid
 graph TD
@@ -149,16 +149,16 @@ graph TD
 
 ### A - Decisões de Arquitetura
 
-A experiência do cliente é o requisito de negócio mais crítico. [cite_start]Garantir uma experiência de compra impecável sob alta demanda, onde é **inaceitável vender um produto já esgotado**, foi o pilar da arquitetura escolhida[cite: 11, 12].
+A experiência do cliente é o requisito de negócio mais crítico. Garantir uma experiência de compra impecável sob alta demanda, onde é **inaceitável vender um produto já esgotado**, foi o pilar da arquitetura escolhida.
 
-* [cite_start]**Microserviço Dedicado:** Foi criado um microserviço para desacoplar a lógica de reserva, permitindo a escala e otimização independentes do componente mais crítico da campanha[cite: 13].
+* **Microserviço Dedicado:** Foi criado um microserviço para desacoplar a lógica de reserva, permitindo a escala e otimização independentes do componente mais crítico da campanha.
 * **FastAPI como Framework:** Utilizado devido à sua alta performance, facilidade de prototipagem e geração de documentação automática, ideal para o escopo do projeto.
-* [cite_start]**Locking Pessimista:** Para garantir a atomicidade da operação de reserva, foi utilizado o Locking Pessimista para prevenir a "corrida pelo último item", criando uma fila ordenada para requisições simultâneas[cite: 28, 31, 32].
+* **Locking Pessimista:** Para garantir a atomicidade da operação de reserva, foi utilizado o Locking Pessimista para prevenir a "corrida pelo último item", criando uma fila ordenada para requisições simultâneas.
 
-[cite_start]**Prós e Contras do Serviço Separado**[cite: 42]:
+**Prós e Contras do Serviço Separado**:
 
 * **Prós:**
-    * [cite_start]**Desacoplamento e Especialização:** O serviço foca em uma única tarefa, protegendo o sistema principal de estoque (Bling) da sobrecarga de tráfego durante eventos como a BaziWeek[cite: 37].
+    * **Desacoplamento e Especialização:** O serviço foca em uma única tarefa, protegendo o sistema principal de estoque (Bling) da sobrecarga de tráfego durante eventos como a BaziWeek.
     * **Desempenho e Escalabilidade:** Permite utilizar tecnologias otimizadas (como Redis em produção) e escalar de forma independente, sem afetar a experiência geral do usuário.
 
 * **Contras:**
@@ -168,21 +168,21 @@ A experiência do cliente é o requisito de negócio mais crítico. [cite_start]
 
 ### B - Diário de IA
 
-[cite_start]Para este desafio, o Gemini foi utilizado como um parceiro de desenvolvimento nas seguintes frentes[cite: 43]:
+Para este desafio, o Gemini foi utilizado como um parceiro de desenvolvimento nas seguintes frentes:
 
 * **Prototipagem:** Gerou o *boilerplate* da API em FastAPI, agilizando o desenvolvimento inicial.
 * **Debate de Estratégias:** Auxiliou no debate sobre as vantagens e desvantagens de diferentes estratégias para lidar com a *race condition* (locking pessimista vs. otimista).
-* **Visualização:** Gerou o código Mermaid para a criação dos diagramas de sequência e arquitetura presentes neste documento, bem como restruturação do Markdown.
+* **Visualização:** Gerou o código Mermaid para a criação dos diagramas de sequência e arquitetura presentes neste documento.
 * **Planejamento de Produção:** Ajudou a consultar e estruturar as melhores práticas e ferramentas para um ambiente de produção (Redis, Prometheus, Grafana, etc.).
 
 ### C - Crítica à IA
 
-Durante a prototipagem, foi sugerido inicialmente a utilização de um ID numérico sequencial para identificar as reservas. Embora funcional, essa abordagem é ingênua em um ambiente de microserviços, pois IDs sequenciais podem levar a colisões e expõem uma vulnerabilidade de segurança (enumeração de recursos). Aprimorei a sugestão utilizando `UUID` para gerar os identificadores de reserva. [cite_start]O `UUID` garante um identificador único entre os microserviços (reserva e ERP) e não é previsível, tornando a solução mais robusta e segura[cite: 45].
+Durante a prototipagem, foi sugerido inicialmente a utilização de um ID numérico sequencial para identificar as reservas. Embora funcional, essa abordagem é ingênua em um ambiente de microserviços, pois IDs sequenciais podem levar a colisões e expõem uma vulnerabilidade de segurança (enumeração de recursos). Aprimorei a sugestão utilizando `UUID` para gerar os identificadores de reserva. O `UUID` garante um identificador único entre os microserviços (reserva e ERP) e não é previsível, tornando a solução mais robusta e segura.
 
 ### D - Plano de Produção
 
-* **Banco de Dados:** Utilizaria um banco de dados em memória como o **Redis** para gerenciar as reservas, que são temporárias e voláteis. [cite_start]Sua performance e o recurso de expiração automática de chaves (TTL) seriam ideais para gerenciar as reservas que expiram[cite: 47].
-* [cite_start]**Observabilidade**[cite: 48]:
+* **Banco de Dados:** Utilizaria um banco de dados em memória como o **Redis** para gerenciar as reservas, que são temporárias e voláteis. Sua performance e o recurso de expiração automática de chaves (TTL) seriam ideais para gerenciar as reservas que expiram.
+* **Observabilidade**:
     * **Logs:** Logs estruturados em formato JSON para todos os eventos importantes (reserva criada, falhou, falta de estoque, expirada), gerenciados por ferramentas como o **ELK Stack**.
     * **Métricas:** Utilizaria o **Prometheus** para coletar métricas da API (latência, taxa de erro, requisições por segundo) e o **Grafana** para criar dashboards visuais para monitoramento em tempo real.
     * **Alertas:** Criaria alertas automatizados com o **Alertmanager** (do ecossistema Prometheus), com notificações enviadas para canais críticos como o **Slack** para garantir uma resposta rápida a incidentes.
