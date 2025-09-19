@@ -23,7 +23,7 @@ git clone https://github.com/motamarcelo/bazi-challenge
 
 Depois, navegue para o diretório do projeto:
 ```bash
-cd desafio-bazico-estoque
+cd bazi-challenge
 ```
 
 #### 2. Criar e Ativar o Ambiente Virtual
