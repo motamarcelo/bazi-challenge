@@ -17,10 +17,9 @@ As instruções abaixo são para um ambiente baseado em Linux (como Ubuntu, Debi
 #### 1. Clonar o Repositório
 
 Primeiro, clone este repositório para a sua máquina local:
-```bash
-git clone [https://github.com/seu-usuario/desafio-bazico-estoque.git](https://github.com/seu-usuario/desafio-bazico-estoque.git)
+```git
+git clone https://github.com/motamarcelo/bazi-challenge
 ```
-*(Lembre-se de substituir pela URL do seu repositório)*
 
 Depois, navegue para o diretório do projeto:
 ```bash
